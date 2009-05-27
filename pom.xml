@@ -6,6 +6,11 @@
   <version>1.0.0</version>
   <name>ingrid-installer</name>
   <url>http://maven.apache.org</url>
+  <scm>
+	<connection>
+		scm:svn:https://127.0.0.1:444/svn/ingrid/ingrid-installer/trunk
+	</connection>
+  </scm>
   <dependencies>
     
   </dependencies>
