@@ -13,7 +13,7 @@
   <url>http://maven.apache.org</url>
   <scm>
 	<connection>scm:svn:https://harrison.its-technidata.de:444/svn/ingrid/ingrid-installer/trunk</connection>
-    <developerConnection>scm:svn:https://harrison.its-technidata.de:444/svn/ingrid/ingrid-base-pom/tags/ingrid-base-pom-1.0.0/ingrid-installer</developerConnection>
+    <developerConnection>scm:svn:https://harrison.its-technidata.de:444/svn/ingrid/ingrid-installer/trunk</developerConnection>
   </scm>
 	<build>
 		<plugins>
