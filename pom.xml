@@ -2,13 +2,13 @@
   <parent>
     <artifactId>ingrid-base-pom</artifactId>
     <groupId>de.ingrid</groupId>
-    <version>3.2.0</version>
+    <version>3.3.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.ingrid</groupId>
   <artifactId>ingrid-installer</artifactId>
   <packaging>pom</packaging>
-  <version>3.3.0-SNAPSHOT</version>
+  <version>3.3.0-RELEASE-SNAPSHOT</version>
   <name>InGrid Installer</name>
   <url>http://maven.apache.org</url>
   <scm>
@@ -39,10 +39,10 @@
 		</plugins>
 	</build>
 	<repositories>
-		<repository>
-      <id>de.ingrid.m2</id>
-      <name>Maven2 Repo InGrid</name>
-      <url>http://harrison.its-technidata.de/ingrid/maven2</url>
-    </repository>
+        <repository>
+          <id>de.ingrid.all</id>
+          <name>Maven Repo InGrid</name>
+          <url>http://harrison.its-technidata.de/archiva/repository/ingrid-all</url>
+        </repository>
   </repositories>
 </project>
