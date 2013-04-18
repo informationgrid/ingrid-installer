@@ -14,5 +14,9 @@
 			<directory>src/main/lib</directory>
 			<outputDirectory>lib</outputDirectory>
 		</fileSet>
+		<fileSet>
+			<directory>src/main/utils</directory>
+			<outputDirectory>utils</outputDirectory>
+		</fileSet>
 	</fileSets>
 </assembly>

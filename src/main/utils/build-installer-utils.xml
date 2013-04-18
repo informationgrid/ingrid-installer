@@ -1,0 +1,115 @@
+<project name="Installer Utils Script" basedir=".">
+
+
+    <!--
+
+    ***************************************************************************************
+    * MACROS
+    ***************************************************************************************
+
+    -->
+
+    <macrodef name="patchFile">
+        <attribute name="patchFile" description="File containing the patch."/>
+        <attribute name="originalFile" description="File to apply the patch to."/>
+        <sequential>
+            <var name="TODAY" unset="true"/>
+            <tstamp>
+                <format property="TODAY" pattern="yyyyMMdd-hhmmss.S" locale="de"/>
+            </tstamp>
+            <copy file="@{originalFile}" tofile="@{originalFile}.${TODAY}" overwrite="true" />
+            <if>
+                <os family="unix" />
+                <then>
+                    <!-- convert dest and patch file to linux format -->
+                    <exec executable="tr">
+                        <arg line="-d '\r'" />
+                        <redirector input="@{patchFile}" >
+                            <outputmapper type="merge" to="@{patchFile}"/>
+                        </redirector>
+                    </exec>
+                    <exec executable="tr">
+                        <arg line="-d '\r'" />
+                        <redirector input="@{originalFile}" >
+                            <outputmapper type="merge" to="@{originalFile}"/>
+                        </redirector>
+                    </exec>
+                    <patch patchfile="@{patchFile}" originalfile="@{originalFile}" />
+                </then>
+            </if>
+
+            <echo message="Patching file '@{originalFile}' with patch '@{patchFile}'." />
+            
+            <exec dir="." executable="cmd.exe" osfamily="Windows" output="output.log">
+                <arg line="/c patch -u -i @{patchFile} @{originalFile}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <!--
+
+    ***************************************************************************************
+    * ANTINSTALLER POST-DISPLAY-TARGETS
+    ***************************************************************************************
+
+    -->
+
+    <target name="antinstaller-determineVersion">
+        <fileset dir="${installDir}/lib" id="componentLibrary" includes="${libraryIdent}*.jar" />
+
+        <antinstaller-log message="File: ${toString:componentLibrary}" />
+
+        <propertyregex 
+            property="oldVersion" 
+            input="${toString:componentLibrary}" 
+            regexp=".*${libraryIdent}(.*)\.jar"
+            select="\1" />
+
+        <antinstaller-log message="Version installed: ${oldVersion}" />
+
+        <condition property="unsupportedVersion">
+            <bool>
+                <islessthan arg1="${oldVersion}" arg2="${minSupportedVersion}" />
+            </bool>
+        </condition>
+
+        <antinstaller-log message="supportedVersions: '${supportedVersions}'" />
+        <for list="${supportedVersions}" param="pVersion">
+            <sequential>
+                <antinstaller-log message="check @{pVersion}" />
+                <if>            
+                    <or>
+                        <equals arg1="@{pVersion}" arg2="${oldVersion}" />
+                        <bool>
+                            <isgreaterthan arg1="@{pVersion}" arg2="${oldVersion}" />
+                        </bool>
+                    </or>            
+                    <then>
+                        <antinstaller-log message="add @{pVersion} to installer" />
+                        <antinstaller-property name="NeedsConfiguration@{pVersion}" value="true" />
+                    </then>
+                </if>
+            </sequential>
+        </for>
+
+        <antinstaller-property name="oldVersion" value="${oldVersion}" />
+
+        <!-- CHECK FOR PATCH COMMAND ON UNIX -->
+        <exec osfamily="unix" executable="patch" failifexecutionfails="false" resultproperty="patchCode">
+            <arg value="--version" />
+        </exec>
+        <if>
+            <and>
+                <os family="unix" />
+                <not>
+                    <equals arg1="${patchCode}" arg2="0" />
+                </not>
+            </and>
+            <then>
+                <antinstaller-message message="Patch-Command not found!" />
+                <antinstaller-property name="patchNotFound" value="true" />
+            </then>
+        </if>
+    </target>
+
+</project>
