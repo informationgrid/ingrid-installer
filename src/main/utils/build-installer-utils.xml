@@ -1,5 +1,6 @@
 <project name="Installer Utils Script" basedir=".">
 
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
 
     <!--
 
@@ -105,7 +106,7 @@
     -->
 
     <target name="antinstaller-determineVersion">
-        <fileset dir="${libraryDir}" id="componentLibrary" includes="${libraryIdent}*.jar" />
+        <fileset dir="${installDir}/${libraryDir}" id="componentLibrary" includes="${libraryIdent}*.jar" />
 
         <antinstaller-log message="File: ${toString:componentLibrary}" />
 
@@ -124,11 +125,11 @@
             <isset property="isJar" />
             <then>
                 <loadproperties prefix="zip">
-                    <zipentry zipfile="${libraryDir}/${toString:componentLibrary}" name="META-INF/MANIFEST.MF"/>
+                    <zipentry zipfile="${installDir}/${libraryDir}/${toString:componentLibrary}" name="META-INF/MANIFEST.MF"/>
                 </loadproperties>
             </then>
             <else>
-                <property file="${libraryDir}/${libraryIdent}" prefix="zip"/>
+                <property file="${installDir}/${libraryDir}/${libraryIdent}" prefix="zip"/>
             </else>
         </if>
         <property name="oldVersion" value="${zip.Implementation-Version}" />
@@ -178,6 +179,28 @@
             <then>
                 <antinstaller-message message="Patch-Command not found!" />
                 <antinstaller-property name="patchNotFound" value="true" />
+            </then>
+        </if>
+    </target>
+
+    <target name="checkPreconditionsForUpdate">
+        <fail if="unsupportedVersion">The version ${oldVersion} is not supported for update! Please do a new installation.</fail>
+        <fail unless="oldVersion">The previous version could not be determined!</fail>
+        <fail if="patchNotFound">The patch command was not found on the system!</fail>
+    </target>
+
+    <target name="showPatchErrors">
+        <if>
+            <isset property="PatchErrors" />
+            <then>
+                <echo>
+*********************************************
+*********************************************
+* THERE WERE PATCH ERRORS:
+* Please look at: ${PatchErrors}
+*********************************************
+*********************************************
+                </echo>
             </then>
         </if>
     </target>
