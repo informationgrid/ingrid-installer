@@ -14,6 +14,7 @@
         <attribute name="originalFile" description="File to apply the patch to."/>
         <sequential>
             <var name="TODAY" unset="true"/>
+            <var name="patchErrorCode" unset="true"/>
             <tstamp>
                 <format property="TODAY" pattern="yyyyMMdd-hhmmss.S" locale="de"/>
             </tstamp>
@@ -34,17 +35,66 @@
                             <outputmapper type="merge" to="@{originalFile}"/>
                         </redirector>
                     </exec>
-                    <patch patchfile="@{patchFile}" originalfile="@{originalFile}" />
+                    <!-- <patch patchfile="@{patchFile}" originalfile="@{originalFile}" /> -->
+                    <exec executable="patch" resultproperty="patchErrorCode">
+                        <arg line="-u -i @{patchFile} @{originalFile}" />
+                    </exec>
                 </then>
             </if>
 
             <echo message="Patching file '@{originalFile}' with patch '@{patchFile}'." />
             
-            <exec dir="." executable="cmd.exe" osfamily="Windows" output="output.log">
+            <exec dir="." executable="cmd.exe" osfamily="Windows" output="output.log" resultproperty="patchErrorCode">
                 <arg line="/c patch -u -i @{patchFile} @{originalFile}"/>
             </exec>
+            
+            <echo>patchErrorCode: ${patchErrorCode}</echo>
+
+            <if>
+                <not>
+                    <equals arg1="${patchErrorCode}" arg2="0"/>
+                </not>
+                <then>
+                    <copy file="@{originalFile}.rej" tofile="@{originalFile}.rej.${TODAY}" overwrite="true" />
+                    <echo>
+*****************************************************
+* PATCH-ERROR: Please check file: @{originalFile}.rej.${TODAY}
+*****************************************************
+                    </echo>
+                    <var name="PatchErrors" value="${PatchErrors}, @{originalFile}.rej.${TODAY}" />
+                </then>
+            </if>
         </sequential>
     </macrodef>
+
+    <scriptdef name="compareVersion" language="javascript">
+        <attribute name="value1" />
+        <attribute name="value2" />
+        <attribute name="prop" />
+        <![CDATA[
+                var version = attributes.get('value1')+"";
+                var tVersion = attributes.get('value2')+"";
+                var property = attributes.get('prop')+"";
+                var versionSplitted = version.split(".");
+                var tVersionSplitted = tVersion.split('.');
+                var determined = false;
+                for (var i=0; i<versionSplitted.length; i++) {
+                    var intVersion = parseInt(versionSplitted[i]);
+                    var intTVersion = parseInt(tVersionSplitted[i]);
+                    if (intVersion < intTVersion) {
+                        project.setProperty(property, -1);
+                        determined = true;
+                        break;
+                    } else if (intVersion > intTVersion) {
+                        project.setProperty(property, +1);
+                        determined = true;
+                        break;
+                    }
+                }
+                if (!determined)
+                    project.setProperty(property, 0);
+            ]]>
+    </scriptdef>
 
     <!--
 
@@ -55,38 +105,58 @@
     -->
 
     <target name="antinstaller-determineVersion">
-        <fileset dir="${installDir}/lib" id="componentLibrary" includes="${libraryIdent}*.jar" />
+        <fileset dir="${libraryDir}" id="componentLibrary" includes="${libraryIdent}*.jar" />
 
         <antinstaller-log message="File: ${toString:componentLibrary}" />
 
-        <propertyregex 
+        <condition property="isJar">
+            <matches string="${toString:componentLibrary}" pattern=".jar$"/>
+        </condition>
+
+        <!-- <propertyregex 
             property="oldVersion" 
             input="${toString:componentLibrary}" 
             regexp=".*${libraryIdent}(.*)\.jar"
-            select="\1" />
+            select="\1" /> -->
 
+        <var name="zip.Implementation-Version" unset="true"/>
+        <if>
+            <isset property="isJar" />
+            <then>
+                <loadproperties prefix="zip">
+                    <zipentry zipfile="${libraryDir}/${toString:componentLibrary}" name="META-INF/MANIFEST.MF"/>
+                </loadproperties>
+            </then>
+            <else>
+                <property file="${libraryDir}/${libraryIdent}" prefix="zip"/>
+            </else>
+        </if>
+        <property name="oldVersion" value="${zip.Implementation-Version}" />
         <antinstaller-log message="Version installed: ${oldVersion}" />
 
-        <condition property="unsupportedVersion">
-            <bool>
-                <islessthan arg1="${oldVersion}" arg2="${minSupportedVersion}" />
-            </bool>
-        </condition>
+        <compareVersion value1="${oldVersion}" value2="${minSupportedVersion}" prop="myResult"/>
+        
+        <if>
+            <equals arg1="${myResult}" arg2="-1" />
+            <then>
+                <property name="unsupportedVersion" value="true"/>
+                <antinstaller-message message="ERROR: Version not supported for update!" />
+                <fail if="unsupportedVersion">Version not supported for update</fail>
+            </then>
+        </if>        
 
-        <antinstaller-log message="supportedVersions: '${supportedVersions}'" />
-        <for list="${supportedVersions}" param="pVersion">
+        <antinstaller-log message="versionsWithConfigurations: '${versionsWithConfigurations}'" />
+        <for list="${versionsWithConfigurations}" param="confVersion">
             <sequential>
-                <antinstaller-log message="check @{pVersion}" />
-                <if>            
-                    <or>
-                        <equals arg1="@{pVersion}" arg2="${oldVersion}" />
-                        <bool>
-                            <isgreaterthan arg1="@{pVersion}" arg2="${oldVersion}" />
-                        </bool>
-                    </or>            
+                <compareVersion value1="@{confVersion}" value2="${oldVersion}" prop="compResult"/>
+                <antinstaller-log message="compared @{confVersion} with ${oldVersion}: ${compResult}"/>
+                <if> <!-- versionWithConfigurations >= oldVersion -->
+                    <not>            
+                        <equals arg1="${compResult}" arg2="-1" />
+                    </not>
                     <then>
-                        <antinstaller-log message="add @{pVersion} to installer" />
-                        <antinstaller-property name="NeedsConfiguration@{pVersion}" value="true" />
+                        <antinstaller-log message="add 'NeedsConfiguration@{confVersion}' to installer" />
+                        <antinstaller-property name="NeedsConfiguration@{confVersion}" value="true" />
                     </then>
                 </if>
             </sequential>
@@ -95,14 +165,14 @@
         <antinstaller-property name="oldVersion" value="${oldVersion}" />
 
         <!-- CHECK FOR PATCH COMMAND ON UNIX -->
-        <exec osfamily="unix" executable="patch" failifexecutionfails="false" resultproperty="patchCode">
+        <exec osfamily="unix" executable="patch" failifexecutionfails="false" resultproperty="patchErrorCode">
             <arg value="--version" />
         </exec>
         <if>
             <and>
                 <os family="unix" />
                 <not>
-                    <equals arg1="${patchCode}" arg2="0" />
+                    <equals arg1="${patchErrorCode}" arg2="0" />
                 </not>
             </and>
             <then>
@@ -112,4 +182,7 @@
         </if>
     </target>
 
+    <target name="antinstaller-showResult">
+        <antinstaller-message message="OK! :)" />
+    </target>
 </project>
