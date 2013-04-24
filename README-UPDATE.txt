@@ -5,6 +5,14 @@ UPDATE-Modifikationen
 -----------------------
 1) Erstelle Page mit Auswahl "Update" oder "Neu"
 
+        <target-select
+            property      ="updateOrNew"
+            displayText   ="Neuinstallation oder Update"
+            defaultValue  ="true">
+            <option value="setUpdateProperty" text="Update (Einstellungen bleiben erhalten)"/>
+            <option value="setInstallProperty" text="Neuinstallation"/>
+        </target-select>
+
 2) Erstelle Page, die nur bei Update angezeigt wird. Eingabe des Zielverzeichnisses.
    
     Wichtige Attribute der Page:
@@ -80,9 +88,11 @@ UPDATE-Modifikationen
 -----------------
 7)  Add target to build-patch.xml:
 
+    <project name="<component-name> Patches">
         <target name="patchFiles" depends="">
             <!-- patch order determined through depends-order -->
         </target>
+    </project>
 
     In dem depends-Attribute werden die Targets in der Reihenfolge der Ausführung eingetragen, beginnend mit dem frühesten Patch.
     Jedes Patch-Target prüft selbst, ob es ausgeführt werden muss!

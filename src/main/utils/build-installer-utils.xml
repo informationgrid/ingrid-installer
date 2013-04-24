@@ -97,6 +97,15 @@
             ]]>
     </scriptdef>
 
+    <scriptdef name="msec" language="javascript">
+        <attribute name="property"/>
+        <element name="fileset" type="fileset"/>
+        <![CDATA[
+            project.setNewProperty(attributes.get("property"), (new java.util.Date()).getTime()
+    );
+        ]]>
+    </scriptdef>
+    
     <!--
 
     ***************************************************************************************
