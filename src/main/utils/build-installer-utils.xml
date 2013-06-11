@@ -26,19 +26,14 @@
                     <!-- convert dest and patch file to linux format -->
                     <exec executable="tr">
                         <arg line="-d '\r'" />
-                        <redirector input="@{patchFile}" >
-                            <outputmapper type="merge" to="@{patchFile}"/>
-                        </redirector>
+                        <redirector input="@{patchFile}" output="@{patchFile}.converted" />
                     </exec>
                     <exec executable="tr">
                         <arg line="-d '\r'" />
-                        <redirector input="@{originalFile}" >
-                            <outputmapper type="merge" to="@{originalFile}"/>
-                        </redirector>
+                        <redirector input="@{originalFile}.${TODAY}" output="@{originalFile}" />
                     </exec>
-                    <!-- <patch patchfile="@{patchFile}" originalfile="@{originalFile}" /> -->
                     <exec executable="patch" resultproperty="patchErrorCode">
-                        <arg line="-u -i @{patchFile} @{originalFile}" />
+                        <arg line="-u -i @{patchFile}.converted @{originalFile}" />
                     </exec>
                 </then>
             </if>
