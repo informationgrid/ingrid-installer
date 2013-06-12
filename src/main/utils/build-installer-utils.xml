@@ -33,7 +33,7 @@
                         <redirector input="@{originalFile}.${TODAY}" output="@{originalFile}" />
                     </exec>
                     <exec executable="patch" resultproperty="patchErrorCode">
-                        <arg line="-u -i @{patchFile}.converted @{originalFile}" />
+                        <arg line="-l -u -i @{patchFile}.converted @{originalFile}" />
                     </exec>
                 </then>
             </if>
@@ -41,7 +41,7 @@
             <echo message="Patching file '@{originalFile}' with patch '@{patchFile}'." />
             
             <exec dir="." executable="cmd.exe" osfamily="Windows" output="output.log" resultproperty="patchErrorCode">
-                <arg line="/c patch -u -i @{patchFile} @{originalFile}"/>
+                <arg line="/c patch -l -u -i @{patchFile} @{originalFile}"/>
             </exec>
             
             <echo>patchErrorCode: ${patchErrorCode}</echo>
