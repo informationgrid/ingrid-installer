@@ -1,6 +1,8 @@
 UPDATE-Modifikationen
 =====================
 
+0) in pom.xml muss mindestens die ingrid-release-pom Version 3.4.0-SNAPSHOT verwendet werden!
+
 (ANTINSTALL-CONFIG.XML)
 -----------------------
 1) Erstelle Page mit Auswahl "Update" oder "Neu"
@@ -19,15 +21,35 @@ UPDATE-Modifikationen
         target               ="patchFiles"
         postDisplayTarget    ="antinstaller-determineVersion"
 
+    <page
+            ifTarget    ="setUpdateProperty"
+            type        ="input"
+            name        ="properties"
+            displayText ="Benötigte Installationsoptionen"
+            target      ="patchFiles"
+            postDisplayTarget = "antinstaller-determineVersion">
+        <directory
+            property            ="installDir"
+            defaultValue        ="/opt/ingrid/${project.artifactId}-${project.version}"
+            defaultValueWin     ="${env.ProgramFiles}\${project.artifactId}-${project.version}"
+            displayText         ="Altes Installationsverzeichnis"
+            create              ="false"
+            checkExists         ="true" />
+    </page>
+
+3) Alle Installationsparameter-Seiten nur bei Neuinstallation anzeigen mit:
+
+    ifTarget    ="setInstallProperty"
+
 (BUILD.XML)
 -----------
 3) Definition der folgenden Properties:
 
-        <!-- THIS PORPERTIES ARE NECESSARY FOR UPDATES -->
+        <!-- THESE PORPERTIES ARE NECESSARY FOR UPDATES -->
         <property name="libraryDir"         value="lib" />
         <property name="libraryIdent"       value="ingrid-iplug-csw-dsc-" />
         <!-- <property name="libraryIdent"       value="MANIFEST.MF" /> -->
-        <property name="versionsWithConfigurations"  value="3.2.0,3.2.1,3.3.0" />
+        <property name="versionsWithConfigurations"  value="" />
         <property name="minSupportedVersion" value="3.2.0" />
 
         libraryDir: zeigt auf das Verzeichnis wo sich die Jar oder Properties-Datei befindet
