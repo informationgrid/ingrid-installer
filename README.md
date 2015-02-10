@@ -1,7 +1,7 @@
 InGrid Installer
 =========
 
-This library is part of the InGrid software package. It provides common functionality regarding ingrid installer.
+This library is part of the InGrid software package. It provides common functionality regarding the InGrid installer.
 
 
 Contribute
