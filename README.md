@@ -3,6 +3,10 @@ InGrid Installer
 
 This library is part of the InGrid software package. It provides common functionality regarding the InGrid installer.
 
+Usage:
+=========
+
+Have a look on the [wiki pages](https://github.com/informationgrid/ingrid-installer/wiki/How-to-prepare-an-installer-for-%22Update%22) to see how an installer is prepared for updates.
 
 Contribute
 ----------
