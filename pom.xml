@@ -8,13 +8,13 @@
   <groupId>de.ingrid</groupId>
   <artifactId>ingrid-installer</artifactId>
   <packaging>pom</packaging>
-  <version>3.6.0</version>
+  <version>3.6.1-SNAPSHOT</version>
   <name>InGrid Installer</name>
   <url>http://maven.apache.org</url>
   <scm>
 	<connection>scm:git:git@github.com:informationgrid/ingrid-installer.git</connection>
     <developerConnection>scm:git:git@github.com:informationgrid/ingrid-installer.git</developerConnection>
-    <tag>ingrid-installer-3.6.0</tag>
+    <tag>HEAD</tag>
   </scm>
 	<build>
 		<plugins>
