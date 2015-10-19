@@ -32,6 +32,7 @@
 
     -->
 
+    <!-- This macro should not be used anymore, since patching often leads to an error and is not easy to handle -->
     <macrodef name="patchFile">
         <attribute name="patchFile" description="File containing the patch."/>
         <attribute name="originalFile" description="File to apply the patch to."/>
@@ -151,12 +152,6 @@
                             <matches string="${toString:componentLibrary}" pattern=".jar$"/>
                         </condition>
 
-                        <!-- <propertyregex 
-                            property="oldVersion" 
-                            input="${toString:componentLibrary}" 
-                            regexp=".*${libraryIdent}(.*)\.jar"
-                            select="\1" /> -->
-
                         <var name="zip.Implementation-Version" unset="true"/>
                         <if>
                             <isset property="isJar" />
@@ -226,28 +221,11 @@
             </then>
         </if>
 
-        <!-- CHECK FOR PATCH COMMAND ON UNIX -->
-        <exec osfamily="unix" executable="patch" failifexecutionfails="false" resultproperty="patchErrorCode">
-            <arg value="--version" />
-        </exec>
-        <if>
-            <and>
-                <os family="unix" />
-                <not>
-                    <equals arg1="${patchErrorCode}" arg2="0" />
-                </not>
-            </and>
-            <then>
-                <antinstaller-message message="Patch-Command not found!" />
-                <antinstaller-property name="patchNotFound" value="true" />
-            </then>
-        </if>
     </target>
 
     <target name="checkPreconditionsForUpdate">
         <fail if="unsupportedVersion">The version ${oldVersion} is not supported for update! Please do a new installation.</fail>
         <fail unless="oldVersion">The previous version could not be determined!</fail>
-        <fail if="patchNotFound">The patch command was not found on the system!</fail>
     </target>
 
     <target name="showPatchErrors">
