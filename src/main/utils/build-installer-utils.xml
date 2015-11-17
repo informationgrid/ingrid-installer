@@ -32,6 +32,7 @@
 
     -->
 
+    <!-- This macro should not be used anymore, since patching often leads to an error and is not easy to handle -->
     <macrodef name="patchFile">
         <attribute name="patchFile" description="File containing the patch."/>
         <attribute name="originalFile" description="File to apply the patch to."/>
@@ -132,43 +133,67 @@
     -->
 
     <target name="antinstaller-determineVersion">
-        <fileset dir="${installDir}/${libraryDir}" id="componentLibrary" includes="${libraryIdent}*.jar" />
+        <!-- check differend paths to lib ! No way to add directory with "*" placeholder !? -->
+        <antinstaller-log message="libraryDir(s) (separated by ','): ${libraryDir}" />
+        <!-- check all libDirs and break if found ! -->
+        <for list="${libraryDir}" param="myLibDir" keepgoing="true">
+            <sequential>
+                <if>
+                    <not>
+                        <isset property="break.flag.versionFound"/>
+                    </not>
+                    <then>
+                        <antinstaller-log message="checking libDir: @{myLibDir}" />
 
-        <antinstaller-log message="File: ${toString:componentLibrary}" />
+                        <fileset erroronmissingdir="false" dir="${installDir}/@{myLibDir}" id="componentLibrary" includes="${libraryIdent}*.jar" />
+                        <antinstaller-log message="checking jar File: ${toString:componentLibrary}" />
 
-        <condition property="isJar">
-            <matches string="${toString:componentLibrary}" pattern=".jar$"/>
-        </condition>
+                        <condition property="isJar">
+                            <matches string="${toString:componentLibrary}" pattern=".jar$"/>
+                        </condition>
 
-        <!-- <propertyregex 
-            property="oldVersion" 
-            input="${toString:componentLibrary}" 
-            regexp=".*${libraryIdent}(.*)\.jar"
-            select="\1" /> -->
+                        <var name="zip.Implementation-Version" unset="true"/>
+                        <if>
+                            <isset property="isJar" />
+                            <then>
+                                <loadproperties prefix="zip">
+                                    <zipentry zipfile="${installDir}/@{myLibDir}/${toString:componentLibrary}" name="META-INF/MANIFEST.MF"/>
+                                </loadproperties>
+                            </then>
+                            <else>
+                                <echo message="checking property file: ${installDir}/@{myLibDir}/${libraryIdent}" />
+                                <property file="${installDir}/@{myLibDir}/${libraryIdent}" prefix="zip"/>
+                            </else>
+                        </if>
+                        <if>
+                            <isset property="zip.Implementation-Version"/>
+                            <then>
+                                <property name="oldVersion" value="${zip.Implementation-Version}" />
+                                <property name="break.flag.versionFound" value="true"/>
+                            </then>
+                        </if>
+                        <antinstaller-log message="Version installed: ${oldVersion}" />
+                    </then>
+                </if>
+            </sequential>
+        </for>
 
-        <var name="zip.Implementation-Version" unset="true"/>
         <if>
-            <isset property="isJar" />
+            <isset property="oldVersion"/>
             <then>
-                <loadproperties prefix="zip">
-                    <zipentry zipfile="${installDir}/${libraryDir}/${toString:componentLibrary}" name="META-INF/MANIFEST.MF"/>
-                </loadproperties>
+                <compareVersion value1="${oldVersion}" value2="${minSupportedVersion}" prop="myResult"/>
             </then>
-            <else>
-                <property file="${installDir}/${libraryDir}/${libraryIdent}" prefix="zip"/>
-            </else>
         </if>
-        <property name="oldVersion" value="${zip.Implementation-Version}" />
-        <antinstaller-log message="Version installed: ${oldVersion}" />
-
-        <compareVersion value1="${oldVersion}" value2="${minSupportedVersion}" prop="myResult"/>
         
         <if>
             <equals arg1="${myResult}" arg2="-1" />
             <then>
                 <property name="unsupportedVersion" value="true"/>
-                <antinstaller-message message="ERROR: Version not supported for update!" />
-                <fail if="unsupportedVersion">Version not supported for update</fail>
+                <!-- Pass props back to main installer -->
+                <antinstaller-property name="unsupportedVersion" value="true"/>
+                <antinstaller-property name="oldVersion" value="${oldVersion}" />
+                <antinstaller-message message="ERROR: Version ${oldVersion} not supported for update! Please do a new installation." />
+                <fail if="unsupportedVersion">Version ${oldVersion} not supported for update! Please do a new installation.</fail>
             </then>
         </if>        
 
@@ -189,30 +214,18 @@
             </sequential>
         </for>
 
-        <antinstaller-property name="oldVersion" value="${oldVersion}" />
-
-        <!-- CHECK FOR PATCH COMMAND ON UNIX -->
-        <exec osfamily="unix" executable="patch" failifexecutionfails="false" resultproperty="patchErrorCode">
-            <arg value="--version" />
-        </exec>
         <if>
-            <and>
-                <os family="unix" />
-                <not>
-                    <equals arg1="${patchErrorCode}" arg2="0" />
-                </not>
-            </and>
+            <isset property="oldVersion"/>
             <then>
-                <antinstaller-message message="Patch-Command not found!" />
-                <antinstaller-property name="patchNotFound" value="true" />
+                <antinstaller-property name="oldVersion" value="${oldVersion}" />
             </then>
         </if>
+
     </target>
 
     <target name="checkPreconditionsForUpdate">
         <fail if="unsupportedVersion">The version ${oldVersion} is not supported for update! Please do a new installation.</fail>
         <fail unless="oldVersion">The previous version could not be determined!</fail>
-        <fail if="patchNotFound">The patch command was not found on the system!</fail>
     </target>
 
     <target name="showPatchErrors">
