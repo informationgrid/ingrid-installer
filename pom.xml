@@ -62,10 +62,10 @@
         </plugins>
     </build>
     <repositories>
-        <repository>
-            <id>de.ingrid.all</id>
-            <name>Maven Repo InGrid</name>
-            <url>https://dev.informationgrid.eu/archiva/repository/ingrid-all</url>
-        </repository>
+      <repository>
+        <id>nexus</id>
+        <name>Nexus Repo</name>
+        <url>https://nexus.informationgrid.eu/repository/maven-public</url>
+      </repository>
     </repositories>
 </project>
