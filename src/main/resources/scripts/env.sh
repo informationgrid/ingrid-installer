@@ -1,1 +1,1 @@
-echo 'export INGRID_OPTS="$INGRID_OPTS -Dfile.encoding=UTF8 -XX:MinHeapFreeRatio=20 -XX:MaxHeapFreeRatio=40 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90"'
+echo 'export INGRID_OPTS="$INGRID_OPTS -Dfile.encoding=UTF8 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30 -XX:G1PeriodicGCInterval=60K"'
